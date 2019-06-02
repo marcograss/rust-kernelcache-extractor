@@ -1,0 +1,16 @@
+[package]
+name = "kcacheext"
+version = "0.1.0"
+authors = ["Marco Grassi <marco.gra@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+clap = "2.33.0"
+bytesize = "1.0.0"
+packed_struct = "0.3.0"
+packed_struct_codegen = "0.3.0"
+byteorder = "1.3.1"
+
+#[dependencies.compression]
+#path = '../rust-compression'
+#features = ["lzss", "deflate"]
