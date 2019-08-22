@@ -3,7 +3,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::io::prelude::*;
 use std::io::Result;
 
-pub fn lzss_decode_block_content(inp: &mut Read, block_size: u64, out: &mut Write) -> Result<u64> {
+pub fn lzss_decode_block_content(inp: &mut dyn Read, block_size: u64, out: &mut dyn Write) -> Result<u64> {
     const N: usize = 4096;
     const F: usize = 18;
     const THRESHOLD: usize = 2;
