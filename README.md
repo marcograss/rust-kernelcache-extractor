@@ -1,5 +1,8 @@
 # rust-kernelcache-extractor
 
+[![Build Status](https://travis-ci.org/marcograss/rust-kernelcache-extractor.svg?branch=master)](https://travis-ci.org/marcograss/rust-kernelcache-extractor)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/marcograss/rust-kernelcache-extractor?branch=master&svg=true)](https://ci.appveyor.com/project/marcograss/rust-kernelcache-extractor)
+
 Simple library and command line tool to extract iOS kernelcache and kpp, KISS.
 
 Credits to Levin's joker tool.
