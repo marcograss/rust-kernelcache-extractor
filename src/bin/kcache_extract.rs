@@ -2,7 +2,6 @@ extern crate clap;
 extern crate kcacheext;
 
 use clap::{App, Arg};
-use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -51,14 +50,14 @@ fn main() {
     match kcacheext::extract_from_file(input_filename) {
         Ok(decoded) => {
             let mut kernelcache_output_file = match File::create(kernelcache_output_filename) {
-                Err(why) => panic!("couldn't create {}: {}", kernelcache_output_filename, why.description()),
+                Err(why) => panic!("couldn't create {}: {}", kernelcache_output_filename, why.to_string()),
                 Ok(file) => file,
             };
             match kernelcache_output_file.write_all(&decoded.kernelcache) {
                 Err(why) => panic!(
                     "couldn't write kernelcache to {}: {}",
                     kernelcache_output_filename,
-                    why.description()
+                    why.to_string()
                 ),
                 Ok(_) => println!("successfully wrote kernelcache to {}", kernelcache_output_filename),
             };
@@ -70,14 +69,14 @@ fn main() {
                 }
                 if decoded.kpp_present {
                     let mut kpp_output_file = match File::create(kpp_output_filename) {
-                        Err(why) => panic!("couldn't create {}: {}", kpp_output_filename, why.description()),
+                        Err(why) => panic!("couldn't create {}: {}", kpp_output_filename, why.to_string()),
                         Ok(file) => file,
                     };
                     match kpp_output_file.write_all(&decoded.kpp) {
                         Err(why) => panic!(
                             "couldn't write kpp to {}: {}",
                             kpp_output_filename,
-                            why.description()
+                            why.to_string()
                         ),
                         Ok(_) => println!("successfully wrote kpp to {}", kpp_output_filename),
                     };
