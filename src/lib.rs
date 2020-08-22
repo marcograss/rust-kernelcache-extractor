@@ -11,6 +11,7 @@ use std::io::{Error, ErrorKind};
 
 use packed_struct::prelude::*;
 use std::mem;
+use lzfse::decode_buffer;
 
 mod lzss;
 
@@ -50,6 +51,7 @@ where
 pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Error> {
     let mut result = ExtractionOutput{kernelcache:Vec::new(), kpp_present: false, kpp:Vec::new()};
     if let Some(lzss_location) = find_subsequence(input_buf, b"complzss") {
+        println!("the kernelcache is compressed with LZSS");
         let lzss_header_size = mem::size_of::<CompressionHeader>();
         if lzss_header_size != 24 {
             panic!(
@@ -116,7 +118,18 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
                 "Can't find kernelcache mach-o header",
             ));
         }
-    } else {
+    } else if let Some(lzfse_location) = find_subsequence(input_buf, b"bvx2") {
+        println!("the kernelcache is compressed with LZFSE");
+        // println!("offset is {:?}", lzfse_location);
+        
+        // TODO get the dimension of uncompressed data dynamically by parsing asn1
+        // TODO for now hardcoded to 200 megs which is enough for now
+        let mut uncompressed = vec![0; (1024*1024*200+ 1) as usize];
+        let bytes_decoded = decode_buffer(&input_buf[lzfse_location..], &mut uncompressed[..]).unwrap();
+        result.kernelcache = uncompressed[..bytes_decoded].to_vec();
+        return Ok(result);
+    }  
+    else {
         return Err(Error::new(
             ErrorKind::InvalidData,
             "Can't find complzss magic",
