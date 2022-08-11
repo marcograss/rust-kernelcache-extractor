@@ -1,8 +1,8 @@
 [package]
 name = "kcacheext"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Marco Grassi <marco.gra@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 clap = "3.2.16"
