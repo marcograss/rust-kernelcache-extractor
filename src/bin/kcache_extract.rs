@@ -1,6 +1,3 @@
-extern crate clap;
-extern crate kcacheext;
-
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::prelude::*;

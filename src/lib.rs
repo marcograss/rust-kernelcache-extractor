@@ -1,8 +1,3 @@
-extern crate byteorder;
-extern crate bytesize;
-extern crate packed_struct;
-extern crate packed_struct_codegen;
-
 use bytesize::ByteSize;
 use std::fs::File;
 use std::io::prelude::*;
