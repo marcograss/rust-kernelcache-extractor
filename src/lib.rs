@@ -51,12 +51,11 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
     if let Some(lzss_location) = find_subsequence(input_buf, b"complzss") {
         println!("the kernelcache is compressed with LZSS");
         let lzss_header_size = mem::size_of::<CompressionHeader>();
-        if lzss_header_size != 24 {
-            panic!(
-                "CompressionHeader size is wrong! BUG {:?}",
-                lzss_header_size
-            );
-        }
+        assert!(
+            lzss_header_size == 24,
+            "CompressionHeader size is wrong! BUG {:?}",
+            lzss_header_size
+        );
         if (lzss_location + lzss_header_size) > input_buf.len() {
             return Err(Error::new(
                 ErrorKind::InvalidData,
@@ -69,8 +68,8 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
         println!(
             "magic {:#x?} compressed size is: {:?} - uncompressed size is: {:?}",
             comp_header.compzlss_str,
-            ByteSize(comp_header.compressed_size as u64),
-            ByteSize(comp_header.uncompressed_size as u64)
+            ByteSize(u64::from(comp_header.compressed_size)),
+            ByteSize(u64::from(comp_header.uncompressed_size))
         );
 
         if let Some(imageend) = find_subsequence(&input_buf[0x2000..], b"__IMAGEEND") {
@@ -92,14 +91,14 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
             println!("kernelcache Mach-O is at {:?}", macho_loc);
             let mut decoded_buffer: Vec<u8> =
                 Vec::with_capacity(comp_header.uncompressed_size as usize);
-            let res_deco = lzss::lzss_decode_block_content(
+            let res_deco = lzss::decode_block_content(
                 &mut &input_buf[(macho_loc - 1)..],
-                comp_header.compressed_size as u64,
+                u64::from(comp_header.compressed_size),
                 &mut decoded_buffer,
             );
             match res_deco {
                 Ok(decompressed_bytes_res) => {
-                    if decompressed_bytes_res != comp_header.uncompressed_size as u64 {
+                    if decompressed_bytes_res != u64::from(comp_header.uncompressed_size) {
                         return Err(Error::new(
                             ErrorKind::InvalidData,
                             "The uncompressed size doesn't match the one in the header",

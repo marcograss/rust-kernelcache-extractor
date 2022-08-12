@@ -3,7 +3,7 @@ use byteorder::{ReadBytesExt, WriteBytesExt};
 use std::io::prelude::*;
 use std::io::Result;
 
-pub fn lzss_decode_block_content(
+pub fn decode_block_content(
     inp: &mut dyn Read,
     block_size: u64,
     out: &mut dyn Write,
@@ -25,7 +25,7 @@ pub fn lzss_decode_block_content(
             if block_read >= block_size {
                 break;
             }
-            let b = inp.read_u8()? as i32;
+            let b = i32::from(inp.read_u8()?);
             block_read += 1;
 
             if block_read >= block_size {
@@ -35,20 +35,7 @@ pub fn lzss_decode_block_content(
             flags = b | 0xff00;
         }
 
-        if (flags & 1) != 0 {
-            let b = inp.read_u8()?;
-            block_read += 1;
-
-            out.write_u8(b)?;
-            block_written += 1;
-
-            if block_read >= block_size {
-                break;
-            }
-
-            text_buf[r] = b;
-            r = (r + 1) & (N - 1);
-        } else {
+        if (flags & 1) == 0 {
             if block_read >= block_size {
                 break;
             }
@@ -66,7 +53,7 @@ pub fn lzss_decode_block_content(
             i |= (j & 0xf0) << 4;
             j = (j & 0x0f) + THRESHOLD;
 
-            for k in 0..(j + 1) {
+            for k in 0..=j {
                 let b = text_buf[(i + k) & (N - 1)];
 
                 out.write_u8(b)?;
@@ -75,6 +62,19 @@ pub fn lzss_decode_block_content(
                 text_buf[r] = b;
                 r = (r + 1) & (N - 1);
             }
+        } else {
+            let b = inp.read_u8()?;
+            block_read += 1;
+
+            out.write_u8(b)?;
+            block_written += 1;
+
+            if block_read >= block_size {
+                break;
+            }
+
+            text_buf[r] = b;
+            r = (r + 1) & (N - 1);
         }
     }
 
