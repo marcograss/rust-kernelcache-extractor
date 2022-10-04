@@ -1,43 +1,40 @@
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
 fn main() {
-    let matches = App::new("kcache_extract")
+    let matches = Command::new("kcache_extract")
         .version(env!("CARGO_PKG_VERSION"))
         .author("marcograss")
         .about("Extract a decrypted iOS 64-bit kernelcache and kpp if present")
         .arg(
-            Arg::with_name("input")
+            Arg::new("input")
                 .short('i')
                 .long("input")
                 .value_name("INPUT")
                 .help("Compressed kernelcache")
-                .takes_value(true)
                 .required(true),
         )
         .arg(
-            Arg::with_name("output")
+            Arg::new("output")
                 .short('o')
                 .long("output")
                 .value_name("OUTPUT")
                 .help("Output file, the decompressed kernelcache")
-                .takes_value(true)
                 .required(true),
         )
         .arg(
-            Arg::with_name("kpp")
+            Arg::new("kpp")
                 .short('k')
                 .long("kpp")
                 .value_name("KPP")
-                .help("Output file for kpp if present")
-                .takes_value(true),
+                .help("Output file for kpp if present"),
         )
         .get_matches();
 
-    let input_filename = matches.value_of("input").unwrap();
-    let kernelcache_output_filename = matches.value_of("output").unwrap();
+    let input_filename = matches.get_one::<String>("input").unwrap();
+    let kernelcache_output_filename = matches.get_one::<String>("output").unwrap();
 
     if Path::new(kernelcache_output_filename).exists() {
         println!("file {:?} already exists", kernelcache_output_filename);
@@ -60,8 +57,8 @@ fn main() {
                     kernelcache_output_filename
                 ),
             };
-            if matches.is_present("kpp") {
-                let kpp_output_filename = matches.value_of("kpp").unwrap();
+            if matches.contains_id("kpp") {
+                let kpp_output_filename = matches.get_one::<String>("kpp").unwrap();
                 if Path::new(kpp_output_filename).exists() {
                     println!("file {:?} already exists", kpp_output_filename);
                     return;
