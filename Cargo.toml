@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 clap = "4.0.27"
 bytesize = "1.1.0"
-packed_struct = "0.10.0"
+packed_struct = "0.10.1"
 packed_struct_codegen = "0.10.1"
 byteorder = "1.4.3"
 lzfse = "0.1.0"
