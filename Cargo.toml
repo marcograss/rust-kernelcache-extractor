@@ -5,8 +5,8 @@ authors = ["Marco Grassi <marco.gra@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-clap = "4.1.4"
-bytesize = "1.1.0"
+clap = "4.1.8"
+bytesize = "1.2.0"
 packed_struct = "0.10.1"
 packed_struct_codegen = "0.10.1"
 byteorder = "1.4.3"
