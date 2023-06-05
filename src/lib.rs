@@ -1,8 +1,8 @@
 use bytesize::ByteSize;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::{Error, ErrorKind};
 
+use anyhow::{anyhow, Result};
 use lzfse::decode_buffer;
 use packed_struct::prelude::*;
 use std::mem;
@@ -26,7 +26,7 @@ pub struct ExtractionOutput {
     pub kpp: Vec<u8>,
 }
 
-pub fn extract_from_file(input_file: &str) -> Result<ExtractionOutput, Error> {
+pub fn extract_from_file(input_file: &str) -> Result<ExtractionOutput> {
     let mut file = File::open(input_file)?;
     let mut buffer = Vec::<u8>::new();
     file.read_to_end(&mut buffer)?;
@@ -42,7 +42,7 @@ where
         .position(|window| window == needle)
 }
 
-pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Error> {
+pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput> {
     let mut result = ExtractionOutput {
         kernelcache: Vec::new(),
         kpp_present: false,
@@ -53,14 +53,10 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
         let lzss_header_size = mem::size_of::<CompressionHeader>();
         assert!(
             lzss_header_size == 24,
-            "CompressionHeader size is wrong! BUG {:?}",
-            lzss_header_size
+            "CompressionHeader size is wrong! BUG {lzss_header_size:?}"
         );
         if (lzss_location + lzss_header_size) > input_buf.len() {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "Image too small, no complzss header space",
-            ));
+            return Err(anyhow!("Image too small, no complzss header space",));
         }
         let mut header_vec: [u8; 24] = [0; 24];
         header_vec.clone_from_slice(&input_buf[lzss_location..lzss_location + 24]);
@@ -80,7 +76,7 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
                     find_subsequence(&input_buf[start_search_kpp..], b"\xCF\xFA\xED\xFE")
                 {
                     let kpp_loc = start_search_kpp + macho_loc;
-                    println!("kpp Mach-O is at {:?}", kpp_loc);
+                    println!("kpp Mach-O is at {kpp_loc:?}");
                     result.kpp.extend_from_slice(&input_buf[kpp_loc..]);
                     result.kpp_present = true;
                 }
@@ -88,32 +84,23 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
         }
 
         if let Some(macho_loc) = find_subsequence(input_buf, b"\xCF\xFA\xED\xFE") {
-            println!("kernelcache Mach-O is at {:?}", macho_loc);
+            println!("kernelcache Mach-O is at {macho_loc:?}");
             let mut decoded_buffer: Vec<u8> =
                 Vec::with_capacity(comp_header.uncompressed_size as usize);
-            let res_deco = lzss::decode_block_content(
+            let decompressed_bytes_res = lzss::decode_block_content(
                 &mut &input_buf[(macho_loc - 1)..],
                 u64::from(comp_header.compressed_size),
                 &mut decoded_buffer,
-            );
-            match res_deco {
-                Ok(decompressed_bytes_res) => {
-                    if decompressed_bytes_res != u64::from(comp_header.uncompressed_size) {
-                        return Err(Error::new(
-                            ErrorKind::InvalidData,
-                            "The uncompressed size doesn't match the one in the header",
-                        ));
-                    }
-                    result.kernelcache = decoded_buffer;
-                    Ok(result)
-                }
-                Err(e) => Err(e),
+            )?;
+            if decompressed_bytes_res != u64::from(comp_header.uncompressed_size) {
+                return Err(anyhow!(
+                    "The uncompressed size doesn't match the one in the header",
+                ));
             }
+            result.kernelcache = decoded_buffer;
+            Ok(result)
         } else {
-            Err(Error::new(
-                ErrorKind::InvalidData,
-                "Can't find kernelcache mach-o header",
-            ))
+            Err(anyhow!("Can't find kernelcache mach-o header",))
         }
     } else if let Some(lzfse_location) = find_subsequence(input_buf, b"bvx2") {
         println!("the kernelcache is compressed with LZFSE");
@@ -127,9 +114,6 @@ pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput, Err
         result.kernelcache = uncompressed[..bytes_decoded].to_vec();
         Ok(result)
     } else {
-        Err(Error::new(
-            ErrorKind::InvalidData,
-            "Can't find complzss magic",
-        ))
+        Err(anyhow!("Can't find comlzss magic"))
     }
 }
