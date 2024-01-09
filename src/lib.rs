@@ -25,12 +25,15 @@ pub struct ExtractionOutput {
     pub kpp_present: bool,
     pub kpp: Vec<u8>,
 }
-
+/// Extract the kernelcache from a lzss compressed file
+///
+/// # Errors
+/// can error for many reasons but mostly malformed data
 pub fn extract_from_file(input_file: &str) -> Result<ExtractionOutput> {
     let mut file = File::open(input_file)?;
     let mut buffer = Vec::<u8>::new();
     file.read_to_end(&mut buffer)?;
-    extract_from_buf(&mut buffer)
+    extract_from_buf(&buffer)
 }
 
 fn find_subsequence<T>(haystack: &[T], needle: &[T]) -> Option<usize>
@@ -42,7 +45,14 @@ where
         .position(|window| window == needle)
 }
 
-pub fn extract_from_buf(input_buf: &mut Vec<u8>) -> Result<ExtractionOutput> {
+/// Extract the kernelcache from a lzss compressed buffer
+///
+/// # Errors
+/// can error for many reasons but mostly malformed data
+///
+/// # Panics
+/// can panic only if we forgot to update the `CompressionHeader` size in the code
+pub fn extract_from_buf(input_buf: &Vec<u8>) -> Result<ExtractionOutput> {
     let mut result = ExtractionOutput {
         kernelcache: Vec::new(),
         kpp_present: false,
