@@ -1,9 +1,10 @@
+use anyhow::anyhow;
 use clap::{Arg, Command};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let matches = Command::new("kcache_extract")
         .version(env!("CARGO_PKG_VERSION"))
         .author("marcograss")
@@ -37,50 +38,27 @@ fn main() {
     let kernelcache_output_filename = matches.get_one::<String>("output").unwrap();
 
     if Path::new(kernelcache_output_filename).exists() {
-        println!("file {kernelcache_output_filename:?} already exists");
-        return;
+        return Err(anyhow!(
+            "file {kernelcache_output_filename:?} already exists"
+        ));
     }
 
-    match kcacheext::extract_from_file(input_filename) {
-        Ok(decoded) => {
-            let mut kernelcache_output_file = match File::create(kernelcache_output_filename) {
-                Err(why) => panic!("couldn't create {kernelcache_output_filename}: {why}"),
-                Ok(file) => file,
-            };
-            match kernelcache_output_file.write_all(&decoded.kernelcache) {
-                Err(why) => {
-                    panic!("couldn't write kernelcache to {kernelcache_output_filename}: {why}")
-                }
-                Ok(()) => {
-                    println!("successfully wrote kernelcache to {kernelcache_output_filename}");
-                }
-            };
-            if matches.contains_id("kpp") {
-                let kpp_output_filename = matches.get_one::<String>("kpp").unwrap();
-                if Path::new(kpp_output_filename).exists() {
-                    println!("file {kpp_output_filename:?} already exists");
-                    return;
-                }
-                if decoded.kpp_present {
-                    let mut kpp_output_file = match File::create(kpp_output_filename) {
-                        Err(why) => panic!("couldn't create {kpp_output_filename}: {why}"),
-                        Ok(file) => file,
-                    };
-                    match kpp_output_file.write_all(&decoded.kpp) {
-                        Err(why) => {
-                            panic!("couldn't write kpp to {kpp_output_filename}: {why}")
-                        }
-                        Ok(()) => println!("successfully wrote kpp to {kpp_output_filename}"),
-                    };
-                } else {
-                    println!("There is no kpp in the image");
-                }
-            } else if decoded.kpp_present {
-                println!("There is a kpp, if you need it use --kpp");
-            }
+    let decoded = kcacheext::extract_from_file(input_filename)?;
+    let mut kernelcache_output_file = File::create(kernelcache_output_filename)?;
+    kernelcache_output_file.write_all(&decoded.kernelcache)?;
+    if matches.contains_id("kpp") {
+        let kpp_output_filename = matches.get_one::<String>("kpp").unwrap();
+        if Path::new(kpp_output_filename).exists() {
+            return Err(anyhow!("file {kpp_output_filename:?} already exists"));
         }
-        Err(e) => {
-            println!("{e:?}");
+        if decoded.kpp_present {
+            let mut kpp_output_file = File::create(kpp_output_filename)?;
+            kpp_output_file.write_all(&decoded.kpp)?;
+        } else {
+            println!("There is no kpp in the image");
         }
+    } else if decoded.kpp_present {
+        println!("There is a kpp, if you need it use --kpp");
     }
+    Ok(())
 }

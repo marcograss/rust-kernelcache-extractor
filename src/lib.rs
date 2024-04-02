@@ -52,7 +52,7 @@ where
 ///
 /// # Panics
 /// can panic only if we forgot to update the `CompressionHeader` size in the code
-pub fn extract_from_buf(input_buf: &Vec<u8>) -> Result<ExtractionOutput> {
+pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
     let mut result = ExtractionOutput {
         kernelcache: Vec::new(),
         kpp_present: false,
