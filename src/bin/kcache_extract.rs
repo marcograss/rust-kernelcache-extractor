@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use clap::{Arg, Command};
+use clap::{Arg, ArgAction, Command};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -32,6 +32,13 @@ fn main() -> anyhow::Result<()> {
                 .value_name("KPP")
                 .help("Output file for kpp if present"),
         )
+        .arg(
+            Arg::new("count-symbols")
+                .short('s')
+                .long("syms")
+                .action(ArgAction::SetTrue)
+                .help("Count the symbols in the kernelcache"),
+        )
         .get_matches();
 
     let input_filename = matches.get_one::<String>("input").unwrap();
@@ -59,6 +66,10 @@ fn main() -> anyhow::Result<()> {
         }
     } else if decoded.kpp_present {
         println!("There is a kpp, if you need it use --kpp");
+    }
+    if matches.get_flag("count-symbols") {
+        let sym_nums = kcacheext::count_symbols(&decoded.kernelcache)?;
+        println!("kernelcache has {sym_nums} symbols");
     }
     Ok(())
 }

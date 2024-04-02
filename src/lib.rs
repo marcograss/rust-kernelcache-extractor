@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use anyhow::{anyhow, Result};
+use goblin::mach::Mach;
 use lzfse::decode_buffer;
 use packed_struct::prelude::*;
 use std::mem;
@@ -126,4 +127,18 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
     } else {
         Err(anyhow!("Can't find comlzss magic"))
     }
+}
+
+/// Returns how many symbols a kernel cache have
+///
+/// # Errors
+/// can error on parsing and malformed images
+pub fn count_symbols(kc_buffer: &[u8]) -> Result<u64> {
+    if let Ok(Mach::Binary(parse_res)) = Mach::parse(kc_buffer) {
+        if let Some(symbols) = parse_res.symbols {
+            return Ok(symbols.into_iter().count().try_into()?);
+        }
+        return Ok(0);
+    }
+    Err(anyhow!("cannot parse kernelcache macho to get the symbols"))
 }
