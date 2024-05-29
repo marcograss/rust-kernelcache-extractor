@@ -1,4 +1,3 @@
-use bytesize::ByteSize;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -60,7 +59,7 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
         kpp: Vec::new(),
     };
     if let Some(lzss_location) = find_subsequence(input_buf, b"complzss") {
-        println!("the kernelcache is compressed with LZSS");
+        // println!("the kernelcache is compressed with LZSS");
         let lzss_header_size = mem::size_of::<CompressionHeader>();
         assert!(
             lzss_header_size == 24,
@@ -72,12 +71,12 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
         let mut header_vec: [u8; 24] = [0; 24];
         header_vec.clone_from_slice(&input_buf[lzss_location..lzss_location + 24]);
         let comp_header = CompressionHeader::unpack(&header_vec).unwrap();
-        println!(
-            "magic {:#x?} compressed size is: {:?} - uncompressed size is: {:?}",
-            comp_header.compzlss_str,
-            ByteSize(u64::from(comp_header.compressed_size)),
-            ByteSize(u64::from(comp_header.uncompressed_size))
-        );
+        // println!(
+        //     "magic {:#x?} compressed size is: {:?} - uncompressed size is: {:?}",
+        //     comp_header.compzlss_str,
+        //     ByteSize(u64::from(comp_header.compressed_size)),
+        //     ByteSize(u64::from(comp_header.uncompressed_size))
+        // );
 
         if let Some(imageend) = find_subsequence(&input_buf[0x2000..], b"__IMAGEEND") {
             // println!("imageend at {:?}", imageend);
@@ -95,7 +94,7 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
         }
 
         if let Some(macho_loc) = find_subsequence(input_buf, b"\xCF\xFA\xED\xFE") {
-            println!("kernelcache Mach-O is at {macho_loc:?}");
+            // println!("kernelcache Mach-O is at {macho_loc:?}");
             let mut decoded_buffer: Vec<u8> =
                 Vec::with_capacity(comp_header.uncompressed_size as usize);
             let decompressed_bytes_res = lzss::decode_block_content(
@@ -114,7 +113,7 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
             Err(anyhow!("Can't find kernelcache mach-o header",))
         }
     } else if let Some(lzfse_location) = find_subsequence(input_buf, b"bvx2") {
-        println!("the kernelcache is compressed with LZFSE");
+        // println!("the kernelcache is compressed with LZFSE");
         // println!("offset is {:?}", lzfse_location);
 
         // TODO get the dimension of uncompressed data dynamically by parsing asn1
