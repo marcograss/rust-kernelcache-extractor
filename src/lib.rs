@@ -70,7 +70,7 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
         }
         let mut header_vec: [u8; 24] = [0; 24];
         header_vec.clone_from_slice(&input_buf[lzss_location..lzss_location + 24]);
-        let comp_header = CompressionHeader::unpack(&header_vec).unwrap();
+        let comp_header = CompressionHeader::unpack(&header_vec)?;
         // println!(
         //     "magic {:#x?} compressed size is: {:?} - uncompressed size is: {:?}",
         //     comp_header.compzlss_str,
@@ -119,8 +119,8 @@ pub fn extract_from_buf(input_buf: &[u8]) -> Result<ExtractionOutput> {
         // TODO get the dimension of uncompressed data dynamically by parsing asn1
         // TODO for now hardcoded to 200 megs which is enough for now
         let mut uncompressed = vec![0; (1024 * 1024 * 200 + 1) as usize];
-        let bytes_decoded =
-            decode_buffer(&input_buf[lzfse_location..], &mut uncompressed[..]).unwrap();
+        let bytes_decoded = decode_buffer(&input_buf[lzfse_location..], &mut uncompressed[..])
+            .map_err(|e| anyhow!("cannot decode lzfse buffer {:?}", e))?;
         result.kernelcache = uncompressed[..bytes_decoded].to_vec();
         Ok(result)
     } else {

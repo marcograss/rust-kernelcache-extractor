@@ -41,8 +41,12 @@ fn main() -> anyhow::Result<()> {
         )
         .get_matches();
 
-    let input_filename = matches.get_one::<String>("input").unwrap();
-    let kernelcache_output_filename = matches.get_one::<String>("output").unwrap();
+    let input_filename = matches
+        .get_one::<String>("input")
+        .ok_or_else(|| anyhow!("Missing input filename"))?;
+    let kernelcache_output_filename = matches
+        .get_one::<String>("output")
+        .ok_or_else(|| anyhow!("Missing output filename"))?;
 
     if Path::new(kernelcache_output_filename).exists() {
         return Err(anyhow!(
@@ -54,7 +58,9 @@ fn main() -> anyhow::Result<()> {
     let mut kernelcache_output_file = File::create(kernelcache_output_filename)?;
     kernelcache_output_file.write_all(&decoded.kernelcache)?;
     if matches.contains_id("kpp") {
-        let kpp_output_filename = matches.get_one::<String>("kpp").unwrap();
+        let kpp_output_filename = matches
+            .get_one::<String>("kpp")
+            .ok_or_else(|| anyhow!("Missing kpp output filename"))?;
         if Path::new(kpp_output_filename).exists() {
             return Err(anyhow!("file {kpp_output_filename:?} already exists"));
         }
